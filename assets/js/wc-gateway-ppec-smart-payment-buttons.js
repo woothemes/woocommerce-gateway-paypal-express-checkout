@@ -2,12 +2,17 @@
 ;( function ( $, window, document ) {
 	'use strict';
 
-	// Show error notice at top of checkout form, or else within button container
-	var showError = function( errorMessage, selector ) {
+	// Show error notices at top of checkout form, or else within button container
+	var showErrors = function( errorMessages, selector ) {
+		var messageItems = errorMessages.map( function( message ) {
+			return '<li>' + message + '</li>';
+		} )
+		.join( '' );
+		var messages = '<ul class="woocommerce-error" role="alert">' + messageItems + '</ul>';
 		var $container = $( '.woocommerce-notices-wrapper, form.checkout' );
 
 		if ( ! $container || ! $container.length ) {
-			$( selector ).prepend( errorMessage );
+			$( selector ).prepend( messages );
 			return;
 		} else {
 			$container = $container.first();
@@ -15,23 +20,8 @@
 
 		// Adapted from https://github.com/woocommerce/woocommerce/blob/ea9aa8cd59c9fa735460abf0ebcb97fa18f80d03/assets/js/frontend/checkout.js#L514-L529
 		$( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
-		$container.prepend( '<div class="woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout">' + errorMessage + '</div>' );
+		$container.prepend( '<div class="woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout">' + messages + '</div>' );
 		$container.find( '.input-text, select, input:checkbox' ).trigger( 'validate' ).blur();
-
-		var scrollElement = $( '.woocommerce-NoticeGroup-checkout' );
-		if ( ! scrollElement.length ) {
-			scrollElement = $container;
-		}
-
-		if ( $.scroll_to_notices ) {
-			$.scroll_to_notices( scrollElement );
-		} else {
-			// Compatibility with WC <3.3
-			$( 'html, body' ).animate( {
-				scrollTop: ( $container.offset().top - 100 )
-			}, 1000 );
-		}
-
 		$( document.body ).trigger( 'checkout_error' );
 	}
 
@@ -49,6 +39,17 @@
 			}
 		}
 		return paypal_funding_methods;
+	}
+
+	var prepareFormData = function( selector, fromCheckout ) {
+		return $( selector ).closest( 'form' )
+			.add( $( '<input type="hidden" name="nonce" /> ' )
+				.attr( 'value', wc_ppec_context.start_checkout_nonce )
+			)
+			.add( $( '<input type="hidden" name="from_checkout" /> ' )
+				.attr( 'value', fromCheckout ? 'yes' : 'no' )
+			)
+			.serialize();
 	}
 
 	var render = function( isMiniCart ) {
@@ -106,31 +107,20 @@
 					}
 				} ).then( function() {
 					// Make PayPal Checkout initialization request.
-					var data = $( selector ).closest( 'form' )
-						.add( $( '<input type="hidden" name="nonce" /> ' )
-							.attr( 'value', wc_ppec_context.start_checkout_nonce )
-						)
-						.add( $( '<input type="hidden" name="from_checkout" /> ' )
-							.attr( 'value', fromCheckout ? 'yes' : 'no' )
-						)
-						.serialize();
-
+					var data = prepareFormData( selector, fromCheckout );
 					return paypal.request( {
 						method: 'post',
 						url: wc_ppec_context.start_checkout_url,
 						body: data,
 					} ).then( function( response ) {
 						if ( ! response.success ) {
-							// Error messages may be preformatted in which case response structure will differ
+							// Response structure may vary depending on validation error
 							var messages = response.data ? response.data.messages : response.messages;
 							if ( 'string' === typeof messages ) {
-								showError( messages );
-							} else {
-								var messageItems = messages.map( function( message ) {
-									return '<li>' + message + '</li>';
-								} ).join( '' );
-								showError( '<ul class="woocommerce-error" role="alert">' + messageItems + '</ul>', selector );
+								messages = [ messages ];
 							}
+							showErrors( messages );
+							$( 'form.checkout' ).submit();
 							return null;
 						}
 						return response.data.token;
@@ -153,6 +143,22 @@
 
 		}, selector );
 	};
+
+	// Force validation after completing PayPal flow from cart and trigger form submit on failure
+	if ( wc_ppec_context.start_checkout_url.includes( 'woo-paypal-return=1' ) ) {
+		var form = $( 'form.checkout' );
+		var data = prepareFormData( form, true );
+		$.ajax( {
+			method: 'POST',
+			url: wc_ppec_context.start_checkout_url,
+			data: data
+		} ).then( function( response ) {
+			if ( ! response.success ) {
+				form.submit();
+			}
+		} );
+		return;
+	}
 
 	// Render cart, single product, or checkout buttons.
 	if ( wc_ppec_context.page ) {
