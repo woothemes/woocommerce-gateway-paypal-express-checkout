@@ -55,6 +55,8 @@
 		// Check fields are valid and allow third parties to attach their own validation checks
 		fields_valid = form.get( 0 ).checkValidity() && $( document ).triggerHandler( 'wc_ppec_validate_product_form', [ fields_valid, form ] ) !== false;
 
+		// WC Product Addons Validation
+		fields_valid = validate_addon_image_fields();
 		update_button();
 	};
 
@@ -76,6 +78,34 @@
 	// Disable the button if there are invalid fields in the product page (like required fields from Product Addons)
 	form.on( 'change', 'select, input, textarea', function() {
 		// Hack: IE11 uses the previous field value for the checkValidity() check if it's called in the onChange handler
+		setTimeout( validate_form, 0 );
+	} );
+
+	// WC Product Addons: If image swatch is a required field, check whether it is selected. Disable PP button if false.
+	function validate_addon_image_fields() {
+		var swatch_select_count = 0;
+		var wc_pao_form_rows = $( '.wc-pao-required-addon > .form-row' ); // Only select required image fields.
+
+		for ( var j = 0; j < wc_pao_form_rows.length; j++ ) {
+			var item = wc_pao_form_rows[j];
+			var image_swatches = item.children;
+
+			for ( var i = 0; i < image_swatches.length-1; i++ ) {
+				var image_swatch = image_swatches[i];
+
+				if ( $( image_swatch ).hasClass( 'selected' ) ) {
+					swatch_select_count += 1;
+					break;
+				}
+			}
+		}
+
+		// Return true if at least one image swatch is selected in each image field.
+		return wc_pao_form_rows.length === swatch_select_count;
+	}
+
+	// WC Product Addons: Trigger validation when image fields are clicked.
+	$( '.wc-pao-addon-image-swatch' ).click( function() {
 		setTimeout( validate_form, 0 );
 	} );
 
