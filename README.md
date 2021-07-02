@@ -2,6 +2,10 @@
 
 ## Getting Started
 
+If Docker is your friend, please follow the instructions [here](https://github.com/Automattic/woocommerce-payments/blob/trunk/docker/README.md) to setup up the local Docker containers to manage all the services required to run this project. 
+
+Otherwise, if you prefer doing things the hard way, please follow the instructions below.
+
 1. Clone this repository locally within the plugins directory of WordPress.
 2. Go to your local installation, and activate this plugin.
 3. Signup or sign into your [PayPal developer account]( https://developer.paypal.com) and [create buyer and seller accounts](https://developer.paypal.com/docs/payflow/express-checkout/testing/#create-paypal-sandbox-seller-and-buyer-accounts).
