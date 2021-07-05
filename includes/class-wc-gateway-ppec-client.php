@@ -300,12 +300,12 @@ class WC_Gateway_PPEC_Client {
 		$params = array_merge(
 			$params,
 			array(
-				'PAYMENTREQUEST_0_AMT'         => $details['order_total'],
-				'PAYMENTREQUEST_0_ITEMAMT'     => $details['total_item_amount'],
-				'PAYMENTREQUEST_0_SHIPPINGAMT' => $details['shipping'],
-				'PAYMENTREQUEST_0_TAXAMT'      => $details['order_tax'],
-				'PAYMENTREQUEST_0_SHIPDISCAMT' => $details['ship_discount_amount'],
-				'NOSHIPPING'                   => WC_Gateway_PPEC_Plugin::needs_shipping() ? 0 : 1,
+				'PAYMENTREQUEST_0_AMT'          => set_currency_format( $details['order_total'] ),
+				'PAYMENTREQUEST_0_ITEMAMT'      => set_currency_format( $details['total_item_amount'] ),
+				'PAYMENTREQUEST_0_SHIPPINGAMT'  => set_currency_format( $details['shipping'] ),
+				'PAYMENTREQUEST_0_TAXAMT'       => set_currency_format( $details['order_tax'] ),
+				'PAYMENTREQUEST_0_SHIPDISCAMT'  => set_currency_format( $details['ship_discount_amount'] ),
+				'NOSHIPPING'                    => WC_Gateway_PPEC_Plugin::needs_shipping() ? 0 : 1,
 			)
 		);
 
@@ -333,7 +333,7 @@ class WC_Gateway_PPEC_Client {
 					'L_PAYMENTREQUEST_0_NAME' . $count => $values['name'],
 					'L_PAYMENTREQUEST_0_DESC' . $count => ! empty( $values['description'] ) ? substr( strip_tags( $values['description'] ), 0, 127 ) : '', // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags
 					'L_PAYMENTREQUEST_0_QTY' . $count  => $values['quantity'],
-					'L_PAYMENTREQUEST_0_AMT' . $count  => $values['amount'],
+					'L_PAYMENTREQUEST_0_AMT' . $count  => set_currency_format( $values['amount'] ),
 				);
 
 				if ( isset( $values['sku'] ) ) {
@@ -940,11 +940,11 @@ class WC_Gateway_PPEC_Client {
 		$params = array(
 			'TOKEN'                          => $args['token'],
 			'PAYERID'                        => $args['payer_id'],
-			'PAYMENTREQUEST_0_AMT'           => $details['order_total'],
-			'PAYMENTREQUEST_0_ITEMAMT'       => $details['total_item_amount'],
-			'PAYMENTREQUEST_0_SHIPPINGAMT'   => $details['shipping'],
-			'PAYMENTREQUEST_0_TAXAMT'        => $details['order_tax'],
-			'PAYMENTREQUEST_0_SHIPDISCAMT'   => $details['ship_discount_amount'],
+			'PAYMENTREQUEST_0_AMT'           => set_currency_format( $details['order_total'] ),
+			'PAYMENTREQUEST_0_ITEMAMT'       => set_currency_format( $details['total_item_amount'] ),
+			'PAYMENTREQUEST_0_SHIPPINGAMT'   => set_currency_format( $details['shipping'] ),
+			'PAYMENTREQUEST_0_TAXAMT'        => set_currency_format( $details['order_tax'] ),
+			'PAYMENTREQUEST_0_SHIPDISCAMT'   => set_currency_format( $details['ship_discount_amount'] ),
 			'PAYMENTREQUEST_0_INSURANCEAMT'  => 0,
 			'PAYMENTREQUEST_0_HANDLINGAMT'   => 0,
 			'PAYMENTREQUEST_0_CURRENCYCODE'  => get_woocommerce_currency(),
@@ -975,7 +975,7 @@ class WC_Gateway_PPEC_Client {
 					'L_PAYMENTREQUEST_0_NAME' . $count => $values['name'],
 					'L_PAYMENTREQUEST_0_DESC' . $count => ! empty( $values['description'] ) ? strip_tags( $values['description'] ) : '', // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags
 					'L_PAYMENTREQUEST_0_QTY' . $count  => $values['quantity'],
-					'L_PAYMENTREQUEST_0_AMT' . $count  => $values['amount'],
+					'L_PAYMENTREQUEST_0_AMT' . $count  => set_currency_format( $values['amount'] ),
 				);
 
 				if ( isset( $values['sku'] ) ) {
