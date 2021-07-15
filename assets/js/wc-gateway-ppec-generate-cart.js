@@ -84,36 +84,45 @@
 	} );
 
 	var generate_cart = function( callback ) {
-		var data = {
-			'nonce': wc_ppec_generate_cart_context.generate_cart_nonce,
-			'attributes': {},
-		};
 
-		var field_pairs = form.serializeArray();
-
-		for ( var i = 0; i < field_pairs.length; i++ ) {
-			// Prevent the default WooCommerce PHP form handler from recognizing this as an "add to cart" call
-			if ( 'add-to-cart' === field_pairs[ i ].name ) {
-				field_pairs[ i ].name = 'ppec-add-to-cart';
+		var formData = new FormData(),
+		formParams = form.serializeArray();
+		
+		for ( var i = 0; i < formParams.length; i++ ) {
+			// Prevent the default WooCommerce PHP form handler from recognizing this as an "add to cart" call.
+			if ( 'add-to-cart' === formParams[ i ].name ) {
+				formParams[ i ].name = 'ppec-add-to-cart';
 			}
 
-			// Save attributes as a separate prop in `data` object,
-			// so that `attributes` can be used later on when adding a variable product to cart
-			if ( -1 !== field_pairs[ i ].name.indexOf( 'attribute_' ) ) {
-				data.attributes[ field_pairs[ i ].name ] = field_pairs[ i ].value;
+			// Save attributes in a nested array,
+			// so that `attributes` can be used later on when adding a variable product to cart.
+			if ( -1 !== formParams[ i ].name.indexOf( 'attribute_' ) ) {
+				formData.append( "attributes[" + formParams[ i ].name + "]" , formParams[ i ].value );
 				continue;
 			}
 
-			data[ field_pairs[ i ].name ] = field_pairs[ i ].value;
+			formData.append( formParams[ i ].name, formParams[ i ].value );
+		}
+		
+		$.each( form.find( 'input[ type="file" ]' ), function( i, tag ) {
+			$.each( $( tag )[ 0 ].files, function( i, file ) {
+				formData.append( tag.name, file );
+			} );
+		} );
+
+		formData.append( 'nonce', wc_ppec_generate_cart_context.generate_cart_nonce );
+		
+		if ( ! formData.has('ppec-add-to-cart') ) {
+			formData.append( 'ppec-add-to-cart', $( '[name=add-to-cart]' ).val() );
 		}
 
-		// If this is a simple product, the "Submit" button has the product ID as "value", we need to include it explicitly
-		data[ 'ppec-add-to-cart' ] = $( '[name=add-to-cart]' ).val();
-
 		$.ajax( {
-			type:    'POST',
-			data:    data,
-			url:     wc_ppec_generate_cart_context.ajaxurl,
+			url: wc_ppec_generate_cart_context.ajaxurl,
+			cache: false,
+			contentType: false,
+			processData: false,
+			data: formData,
+			type: 'POST',
 			success: callback,
 		} );
 	};
